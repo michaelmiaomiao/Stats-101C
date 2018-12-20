@@ -1,0 +1,786 @@
+
+
+```{r}
+
+HTrainLast <- read.csv("HTrainLast.csv")
+houseNew <- HTrainLast[,-c(7,46,58,70:76)]
+
+xnew <- rep(NA,3500)
+for (i in c(1:3500)) {
+  xnew[i] <- sum(is.na(houseNew[i,]))
+}
+# xnew
+houseNew <- houseNew[(xnew==0),]
+houseNew <- na.omit(houseNew)
+
+for (i in houseNew$Neighborhood){
+  if (is.na(i)){
+    i <- "None"
+  }
+}
+# dim(houseNew)
+# library(tree)
+# tree1 <- tree(affordabilitty~.,data=houseNew)
+# summary(tree1)
+# plot(tree1)
+# text(tree1)
+
+# testt <- read_csv("~/Desktop/FALL/Stats 101C/Final/HTestLastNoY.csv")
+# testt <- testt[,-c(7,46,58,70:76)]
+
+# library(randomForest)
+# modelrandom <- randomForest(affordabilitty~.,data=houseNew,ntree=20)
+# test<-factor(test, levels=levels(train))
+
+numbers <- unlist(lapply(houseNew, is.numeric)) 
+num <- houseNew[ , numbers]
+num$affordabilitty <- houseNew[ ,71]
+num <- num[,-1]
+
+
+numbers <- as.numeric(numbers)
+which(numbers == 1)
+
+gg <- c(2,4,5,17,18,19,20,26,34,36,37,38,43,44,45,46,47,48,49,50,51,53,55,57,59,60,64,65,66,67,68)
+library(ggplot2)
+
+for (i in gg)
+{
+  print(ggplot(houseNew, aes(x= houseNew[,i] , color= affordabilitty)) + geom_density() + xlab(names(houseNew)[i] ) )
+}
+```
+```{r}
+library(randomForest)
+
+set.seed(12345)
+
+bag0 = randomForest(affordabilitty~.,data=na.omit(houseNew),mtry=20,importance=TRUE)
+summary(bag0)
+# plot(bag0)
+
+importance(bag0)
+varImpPlot (bag0)
+
+bag=randomForest(medv~.,data=Boston[train,],mtry=13,importance=TRUE,ntree=100)
+summary(bag)
+plot(bag)
+print(bag)
+yhat3<-predict(bag,newdata=Boston[-train,])
+plot(yhat3,boston.test,ylab="Actual medv values",xlab="Estimated medv values using RF")
+abline(0,1)
+title("Plotting Actual vs Predicted Values")
+
+mean((yhat3-boston.test)^2)
+summary(lm(boston.test~yhat3))
+
+
+importance(bag)
+varImpPlot (bag)
+```
+
+
+
+luke
+```{r}
+#match("OverallQual","LotFrontage","FullBath",names(houseNew))
+#grep("OverallQual","LotFrontage", colnames(houseNew))
+#match(c("OverallQual","LotFrontage"),houseNew)
+
+sum(is.na(houseNew$affordabilitty))
+
+```
+
+```{r}
+
+library(readr)
+HTrainLast <- read.csv("HTrainLast.csv")
+houseNew <- HTrainLast[,-c(7,46,58,70:76)]
+
+xnew <- rep(NA,3500)
+for (i in c(1:3500)) {
+  xnew[i] <- sum(is.na(houseNew[i,]))
+}
+
+for (i in houseNew$Neighborhood){
+  if (is.na(i)){
+    i <- "None"
+  }
+}
+
+
+# xnew
+houseNew <- houseNew[(xnew==0),]
+houseNew <- na.omit(houseNew)
+
+# dim(houseNew)
+# library(tree)
+# tree1 <- tree(affordabilitty~.,data=houseNew)
+# summary(tree1)
+# plot(tree1)
+# text(tree1)
+
+testt <- read.csv("HTestLastNoY.csv")
+testt <- testt[,-c(7,46,58,70:76)]
+
+# library(randomForest)
+# modelrandom <- randomForest(affordabilitty~.,data=houseNew,ntree=20)
+# test<-factor(test, levels=levels(train))
+
+numbers <- unlist(lapply(houseNew, is.numeric)) 
+num <- houseNew[ , numbers]
+num$affordabilitty <- houseNew[ ,71]
+num <- num[,-1]
+
+
+numbers <- as.numeric(numbers)
+which(numbers == 1)
+
+gg <- c(2,4,5,17,18,19,20,26,34,36,37,38,43,44,45,46,47,48,49,50,51,53,55,57,59,60,64,65,66,67,68)
+library(ggplot2)
+
+for (i in gg)
+{
+  print(ggplot(houseNew, aes(x= houseNew[,i] , color= affordabilitty)) + geom_density() + xlab(names(houseNew)[i] ) )
+}
+
+library(randomForest)
+set.seed(12345)
+
+bag0 = randomForest(affordabilitty~.,data=houseNew,mtry=70,importance=TRUE)
+summary(bag0)
+# plot(bag0)
+
+
+kk <- data.frame(importance(bag0))
+
+
+varImpPlot (bag0)
+lll <- c("OverallQual", "YearBuilt", "FullBath", "GrLivArea", "Neighborhood", "X1stFlrSF", "TotalBsmtSF", "LotArea", "GarageArea", "X2ndFlrSF", "BsmtFinSF1", "LotFrontage", "BsmtUnfSF")
+arra <- rep(0,length(lll))
+for (j in 1:length(lll))
+{
+  arra[j] <- which(colnames(houseNew) == lll[j])
+}
+
+
+secondnew <- houseNew[,c(arra,71)]
+secondtest <- testt[,arra]
+
+secondtest$LotFrontage[is.na(secondtest$LotFrontage)] <- mean(na.omit(secondtest$LotFrontage))
+
+
+model1 <- glm(secondnew$affordabilitty~., data=secondnew, family = binomial()) 
+
+predict(model1,secondtest,type="response")
+
+preds1 = ifelse(predict(model1,secondtest,type="response") >= 0.5,"Unaffordable","Affordable")
+
+
+preds1 = data.frame("Ob"=c(1:1500), "affordabilitty"= preds1)
+
+# 
+# head(preds1)
+
+write.csv(preds1, file = "firstattempt.csv", row.names = F)
+
+
+
+lll2 <- c("OverallQual", "YearBuilt", "FullBath", "GrLivArea", "Neighborhood", "X1stFlrSF", "TotalBsmtSF")
+arra2 <- rep(0,length(lll2))
+for (j in 1:length(lll2))
+{
+  arra2[j] <- which(colnames(houseNew) == lll2[j])
+}
+
+
+secondnew2 <- houseNew[,c(arra2,71)]
+secondtest2 <- testt[,arra2]
+
+model2 <- glm(secondnew2$affordabilitty~., data=secondnew2, family = binomial()) 
+
+predict(model2,secondtest2,type="response")
+
+preds2 = ifelse(predict(model2,secondtest2,type="response") >= 0.5,"Unaffordable","Affordable")
+
+preds2 = data.frame("Ob"=c(1:1500), "affordabilitty"= preds2)
+
+write.csv(preds2, file = "secondattempt.csv", row.names = F)
+
+```
+
+
+##luke
+```{r}
+house <- read.csv('HTrainLast.csv')
+data_to_predict = read.csv("HTestLastNoY.csv")
+data_to_predict$affordabilitty = 0
+```
+```{r}
+
+houseNew <- house[, -c(1,7, 46,58, 70, 71, 72, 73, 74, 75,76)]
+for (i in nrow(houseNew)){
+  for (j in ncol(houseNew)){
+    if (is.na(i)){
+      i <- as.character(NA)
+    }
+  }
+}
+houseNew <- na.omit(houseNew)
+dim(houseNew)
+```
+```{r}
+
+library(randomForest)
+set.seed(1)
+
+bag0 = randomForest(affordabilitty~.,data=houseNew, mtry=10,importance=TRUE, ntree=200)
+table(predict(bag0, type = 'class'), houseNew$affordabilitty)
+
+frame <- as.data.frame(importance(bag0))
+giniImportant <- head(row.names(frame[order(-frame$MeanDecreaseGini),]),15)
+accuracyIportant <- head(row.names(frame[order(-frame$MeanDecreaseAccuracy),]),15)
+intersect(giniImportant, accuracyIportant)
+```
+
+```{r}
+
+del <- c( "YearBuilt", "OverallQual","Neighborhood","GrLivArea","FullBath","X1stFlrSF","TotalBsmtSF","GarageArea","X2ndFlrSF","LotArea")
+important <- rep(NA, length(del))
+for (i in 1:length(del)){
+  important[i] = which(colnames(house)==del[i]) 
+}
+important
+
+sapply(house[, important], function(x) sum(is.na(x)))
+
+
+important2 <- rep(NA, length(del))
+count=0
+for (i in del) {
+  if (is.numeric(house[i][[1]])){
+    count = count+1
+    important2[count] <- i
+  }
+}
+print(important2)
+print(count)
+```
+
+
+```{r}
+houseNew <- house[, -c(1,7, 46,58, 70, 71, 72, 73, 74, 75,76)]
+for (i in houseNew$Neighborhood){
+  if (is.na(i)){
+    i <- "None"
+  }
+}
+
+for (i in del) {
+  for (j in nrow(i)){
+    if (is.na(houseNew[i][[j]])){
+      print(c(i,j))
+    }
+  }
+  
+}
+houseNew <- na.omit(houseNew)
+dim(houseNew)
+head(houseNew)
+```
+```{r}
+library(tree)
+
+tree.2 <- tree(affordabilitty ~ YearBuilt+OverallQual+Neighborhood+GrLivArea+FullBath+X1stFlrSF+TotalBsmtSF+GarageArea+X2ndFlrSF+LotArea, data = houseNew)
+```
+
+
+```{r}
+tree_preds2 = predict(tree.2,newdata=data_to_predict, type="class")
+tree_preds2 = data.frame("Ob"=c(1:1500), "affordabilitty"=tree_preds2)
+head(tree_preds2)
+write.csv(tree_preds2, file = "tree second attempt.csv", row.names = F)
+```
+```{r}
+set.seed(12345)
+cv.tree2 <- cv.tree(tree.2, FUN = prune.misclass)
+plot(cv.tree2$size,cv.tree2$dev,type="b")
+```
+```{r}
+tree.2p = prune.misclass(tree.2, best = 4)
+tree_preds3 = predict(tree.2p, newdata = data_to_predict, type='class')
+tree_preds3 = data.frame("Ob"=c(1:1500), "affordabilitty"=tree_preds3)
+count1=0
+for (i in c(1:1500)){
+  if (tree_preds2$affordabilitty[[i]]!= tree_preds3$affordabilitty[[i]]){
+    count1 = 1+count1
+  }
+}
+print(count1)
+write.csv(tree_preds2, file = "tree third attempt.csv", row.names = F)
+```
+
+```{r}
+rf2 = randomForest(affordabilitty~YearBuilt+OverallQual+Neighborhood+GrLivArea+FullBath+X1stFlrSF+TotalBsmtSF+GarageArea+X2ndFlrSF+LotArea,
+                   data=houseNew, mtry=8,importance=TRUE, ntree=200)
+rf2
+```
+
+
+```{r}
+forest_preds2 = predict(rf2, newdata=data_to_predict, type = "class")
+forest_preds2 = data.frame("Ob"=c(1:1500), "affordabilitty"=forest_preds2)
+write.csv(forest_preds2, file = "forest 3rd attempt.csv", row.names = F)
+```
+
+```{r}
+important[11] = 81
+important
+houseNew1 <- house[,important]
+dim(houseNew1)
+houseNew1 <- na.omit(houseNew1)
+dim(houseNew1)
+```
+
+```{r}
+set.seed(1)
+rf3 = randomForest(affordabilitty~YearBuilt+OverallQual+GrLivArea+FullBath+X1stFlrSF+TotalBsmtSF+GarageArea+X2ndFlrSF+LotArea,
+                   data=houseNew1, importance=TRUE, ntree=200)
+
+rf3
+```
+```{r}
+forest_preds3 = predict(rf3, newdata=data_to_predict, type = "class")
+forest_preds3 = data.frame("Ob"=c(1:1500), "affordabilitty"=forest_preds2)
+write.csv(forest_preds2, file = "forest 4th attempt.csv", row.names = F)
+```
+
+```{r}
+library(class)
+
+fc <- data_to_predict[ ,sapply(data_to_predict, is.factor)]
+#fc
+cn <- data_to_predict[ ,sapply(data_to_predict, is.numeric)]
+#cn
+cntrain <- house[ ,sapply(house, is.numeric)]
+for(i in 1:ncol(cntrain)){
+  cntrain[is.na(cntrain[,i]), i] <- mean(cntrain[,i], na.rm = TRUE)
+}
+ #cntrain
+ is.na( cntrain)
+cntrain
+```
+```{r}
+#mathced_result <- match(houseNew,houseNew1)
+#mathced_result
+```
+```{r}
+houseNew1 <- as.data.frame(houseNew1)
+library("mice")
+library("magrittr")
+#md.pattern(houseNew1)
+```
+
+
+
+```{r}
+library("magrittr")
+library("DMwR")
+library("Hmisc")
+house <- read.csv('HTrainLast.csv')
+house_testing = read.csv("HTestLastNoY.csv")
+house_testing_NoNA <- house_testing[, -c(1,7, 46,58, 70, 71, 72, 73, 74, 75,76)]
+#  house orignal data
+# original training data eliminating variables with large na counts.
+house_largeNAoff <- as.data.frame(house[, -c(1,7, 46,58, 70, 71, 72, 73, 74, 75,76)])
+origin <- house_largeNAoff
+
+#count the na for the remained data set
+NAcount <- sapply(X = house_largeNAoff, FUN = function(house_largeNAoff)sum(is.na(house_largeNAoff)))%>%sort(,decreasing = T)
+NAcount <- as.data.frame(NAcount)
+
+NAcount$NAcount[c(1:27)]
+#house_largeNAoff$affordabilitty
+# variables with NA counts greater than 10
+#inter
+
+```
+```{r}
+class('LotFrontage')
+```
+'LotFrontage',
+'GarageYrBlt',
+'MasVnrArea',
+'BsmtFullBath',
+'BsmtHalfBath',
+'BsmtFinSF1',
+'BsmtFinSF2',		
+'BsmtUnfSF',
+'TotalBsmtSF',
+'GarageCars',				
+'GarageArea'
+
+'GarageFinish',
+'GarageQual',
+'GarageCond',
+'GarageType',
+'BsmtQual',
+'BsmtCond',
+'BsmtExposure',
+'BsmtFinType2',
+'BsmtFinType1',
+'MasVnrType',
+'MSZoning',
+'Functional',
+'Utilities',
+'Electrical',
+'KitchenQual',
+'affordabilitty'
+
+```{r}
+#combined general repalcement.
+house_largeNAoff <- house_largeNAoff[ , !(names(house_largeNAoff) %in% "affordabilitty")]
+for (i in ncol(house_largeNAoff)) {
+  if (is.factor(house_largeNAoff[,i])){
+    house_largeNAoff[,i] <- as.character(house_largeNAoff[,i])
+  }
+}
+for (i in ncol(house_testing_NoNA)) {
+  if (is.factor(house_testing_NoNA[,i])){
+    house_testing_NoNA[,i] <- as.character(house_testing_NoNA[,i])
+  }
+}
+
+
+newData <- rbind(house_largeNAoff, house_testing_NoNA)
+
+for (i in ncol(newData)) {
+  if (!is.numeric(newData[1,i])){
+    newData[,i] <- factor(newData[,i])
+  }
+  
+}
+
+
+
+dim(newData)
+houseNew <- newData[1:3220,]
+data_to_predict <- newData[3221:4720,]
+
+write.csv(newData, file = "combineddata.csv", row.names = F)
+```
+
+
+
+
+
+# perform knn imputation.
+```{r}
+
+
+```
+
+```{r}
+knnOutput <- knnImputation(house_largeNAoff[, !names(house_largeNAoff) %in% "affordabilitty"])
+anyNA(knnOutput)
+knnOutputtesitng <- knnImputation(house_testing_NoNA[, !names(house_testing_NoNA) %in% "affordabilitty"])
+anyNA(knnOutputtesitng)
+write.csv(knnOutput, file = "training_clean.csv", row.names = F)
+write.csv(knnOutputtesitng, file = "testing_clean.csv", row.names = F)
+```
+```{r}
+knnOutput_comb <- knnImputation(newData[, !names(newData) %in% "affordabilitty"])
+anyNA(knnOutput_comb)
+write.csv(knnOutput_comb, file = "combineddata_clean.csv", row.names = F)
+#View(knnOutput_com)
+```
+
+```{r}
+knnNoFactor <- knnImputation(house_largeNAoff[,!names(house_largeNAoff) %in% c('GarageFinish',
+'GarageQual',
+'GarageCond',
+'GarageType',
+'BsmtQual',
+'BsmtCond',
+'BsmtExposure',
+'BsmtFinType2',
+'BsmtFinType1',
+'MasVnrType',
+'MSZoning',
+'Functional',
+'Utilities',
+'Electrical',
+'KitchenQual'
+)])
+anyNA(knnNoFactor)
+```
+
+???
+```{r}
+
+#house_largeNAoff
+library(rpart)
+#factor
+Rfactoroutput <- rpart(GarageCond~.,
+              data=house_largeNAoff[!is.na(house_largeNAoff$GarageCond),],
+              method="class",
+              na.action=na.omit)  # since rad is a factor
+
+
+#anova_mod <- rpart(ptratio ~ . - medv, data=BostonHousing[!is.na(BostonHousing$ptratio), ], method="anova", na.action=na.omit)  # since ptratio is numeric.
+
+
+```
+
+```{r}
+
+
+
+
+```
+
+'BsmtFinSF2',		
+'BsmtUnfSF',
+'TotalBsmtSF',
+'GarageCars',				
+'GarageArea',
+'GarageFinish',
+'GarageQual',
+'GarageCond',
+'GarageType',
+'BsmtQual',
+'BsmtCond',
+'BsmtExposure',
+'BsmtFinType2',
+'BsmtFinType1',
+'MasVnrType',
+'MSZoning',
+'Functional',
+'Utilities',
+'Electrical',
+'KitchenQual')
+
+
+```{r}
+test <- cbind(house_largeNAoff$LotFrontag,house_largeNAoff$GarageYrBlt)
+test
+```
+```{r}
+combined_data <- read.csv("combineddata.csv")
+library("mice")
+combined_data <- as.data.frame(combined_data)
+attach(combined_data)
+micedata <- as.data.frame(cbind(LotFrontage,
+GarageYrBlt,
+MasVnrArea,
+BsmtFullBath,
+BsmtHalfBath,
+BsmtFinSF1,
+BsmtFinSF2,		
+BsmtUnfSF,
+TotalBsmtSF,
+GarageCars,				
+GarageArea,
+GarageFinish,
+GarageQual,
+GarageCond,
+GarageType,
+BsmtQual,
+BsmtCond,
+BsmtExposure,
+BsmtFinType2,
+BsmtFinType1,
+MasVnrType,
+MSZoning,
+Functional,
+Utilities,
+Electrical,
+KitchenQual))
+
+
+mice1 <- mice(data = micedata, method="rf")  # perform mice imputation, based on random forests.
+mice1
+miceOutput <- complete(mice1)  # generate the completed data.
+anyNA(miceOutput)
+
+```
+```{r}
+
+newData_NA <- newData[ , (names(house_largeNAoff) %in% c('LotFrontage',
+'GarageYrBlt',
+'MasVnrArea',
+'BsmtFullBath',
+'BsmtHalfBath',
+'BsmtFinSF1',
+'BsmtFinSF2',		
+'BsmtUnfSF',
+'TotalBsmtSF',
+'GarageCars',				
+'GarageArea',
+'GarageFinish',
+'GarageQual',
+'GarageCond',
+'GarageType',
+'BsmtQual',
+'BsmtCond',
+'BsmtExposure',
+'BsmtFinType2',
+'BsmtFinType1',
+'MasVnrType',
+'MSZoning',
+'Functional',
+'Utilities',
+'Electrical',
+'KitchenQual'))]
+
+newDATA_NoNA <- newData[ , (!names(house_largeNAoff) %in% c('LotFrontage',
+'GarageYrBlt',
+'MasVnrArea',
+'BsmtFullBath',
+'BsmtHalfBath',
+'BsmtFinSF1',
+'BsmtFinSF2',		
+'BsmtUnfSF',
+'TotalBsmtSF',
+'GarageCars',				
+'GarageArea',
+'GarageFinish',
+'GarageQual',
+'GarageCond',
+'GarageType',
+'BsmtQual',
+'BsmtCond',
+'BsmtExposure',
+'BsmtFinType2',
+'BsmtFinType1',
+'MasVnrType',
+'MSZoning',
+'Functional',
+'Utilities',
+'Electrical',
+'KitchenQual'))]
+
+#newData_NA
+
+#miceNA_output <- mice(newData_NA[, !names(newData_NA) %in% "aford"], method="rf")  # perform mice imputation, based on random forests.
+#miceNAOutput <- complete(miceNA_output)  # generate the completed data.
+
+anyNA(miceNAOutput)
+NAcount_mice <- sapply(X = miceNAOutput, FUN = function(miceNAOutput)sum(is.na(miceNAOutput)))%>%sort(,decreasing = T)
+
+#View(NAcount_mice)
+#newDATA_NoNA
+
+Mice_Clean_Data <- cbind(miceNAOutput,newDATA_NoNA)
+dim(Mice_Clean_Data)
+
+NAcount_mice_combined <- sapply(X = Mice_Clean_Data, FUN = function(Mice_Clean_Data)sum(is.na(Mice_Clean_Data)))%>%sort(,decreasing = T)
+NAcount_mice_combined
+MICEDATA <-Mice_Clean_Data
+MICEDATA
+which(is.na(MICEDATA$Exterior1st))
+class(MICEDATA$Exterior1st)
+
+MICEDATA_deleted <- na.omit(MICEDATA)
+
+ which(is.na(MICEDATA))
+ 
+ write.csv(MICEDATA, file = "MICEDATA.csv", row.names = F)
+ 
+```
+
+```{r}
+#install.packages("missForest")
+library(missForest)
+#newData
+
+```
+prodNA(newData, noNA = 0)
+
+```{r}
+library(Hmisc)
+#newData_NA
+agre <- aregImpute(~ GarageQual + BsmtFullBath +Electrical , data = newData_NA , n.impute = ) 
+
+```
+
+```{r}
+library(Hmisc)
+x1 <- factor(sample(c('a','b','c'),1000,TRUE))
+x2 <- (x1=='b') + 3*(x1=='c') + rnorm(1000,0,2)
+x3 <- rnorm(1000)
+y  <- x2 + 1*(x1=='c') + .2*x3 + rnorm(1000,0,2)
+orig.x1 <- x1[1:250]
+orig.x2 <- x2[251:350]
+x1[1:250] <- NA
+x2[251:350] <- NA
+
+# Create a data frame 
+d <- data.frame(x1,x2,x3,y)
+# Find value of nk that yields best validating imputation models
+# tlinear=FALSE means to not force the target variable to be linear
+```
+```{r}
+
+# Use imputation 
+library(Hmisc)
+# newData_NA$Utilities
+# which(is.na(newData_NA$Utilities))
+# Utilities++GarageFinish+GarageQual+GarageCond+GarageType+BsmtQual+BsmtCond+BsmtExposure+BsmtFinType2+BsmtFinType1+MasVnrType+MSZoning+Functional+Electrical+KitchenQual
+#attach(newData_NA)
+#LotFrontage  +MasVnrArea+BsmtFullBath+BsmtHalfBath+BsmtFinSF1+BsmtFinSF2+BsmtUnfSF+TotalBsmtSF+GarageCars+GarageArea
+
+d <- newData_NA[]
+attach(d)
+f <- aregImpute(
+ formula =  ~LotFrontage+GarageYrBlt,nk=c(0,3:5),data = d , n.impute=5) 
+
+imputed <-impute.transcan(f, data=newData_NA, imputation=1, list.out=TRUE, pr=FALSE, check=FALSE)
+imputed.data <- as.data.frame(do.call(cbind,imputed))
+imputed.data <- imputed.data[, colnames(d), drop = FALSE]
+```
+```{r}
+#install.packages("missForest")
+ library(missForest)
+#iris.imp <- missForest(newData_NA)
+MF_clean <- as.data.frame(iris.imp$ximp)
+anyNA(MF_clean)
+MF<- cbind(MF_clean,newDATA_NoNA)
+write.csv(MF, file = "MFDATA.csv", row.names = F)
+# anyNA(MF_Clean_Data)
+# which(is.na(MF_Clean_Data))
+```
+# Get the imputed values
+imputed <-impute.transcan(f, data=d, imputation=1, list.out=TRUE, pr=FALSE, check=FALSE)
+
+# convert the list to the database
+imputed.data <- as.data.frame(do.call(cbind,imputed))
+
+# arrange the columns accordingly
+imputed.data <- imputed.data[, colnames(d), drop = FALSE]
+
+
+#for the testing
+
+
+```{r}
+#install.packages("Amelia")
+library(Amelia)
+amelia_fit <- amelia(newData_NA, m=26, parallel = "multicore",noms = c('BsmtFinSF2'), idvars = c('GarageFinish',
+'GarageQual',
+'GarageCond',
+'GarageType',
+'BsmtQual',
+'BsmtCond',
+'BsmtExposure',
+'BsmtFinType2',
+'BsmtFinType1',
+'MasVnrType',
+'MSZoning',
+'Functional',
+'Utilities',
+'Electrical',
+'KitchenQual'))
+amelia_fit$imputations[[1]]
+```
+
+

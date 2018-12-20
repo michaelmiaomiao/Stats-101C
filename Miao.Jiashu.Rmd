@@ -1,0 +1,415 @@
+---
+title: "HW 3 101C JIASHU MIAO"
+author: "Jiashu Miao"
+date: "2018/10/26"
+output:
+  word_document: default
+  html_document: default
+---
+### UID 804786709
+
+## Question 1 
+
+a. On the test set, we expect LDA to perform better than QDA, because QDA could overfit the linearity on the Bayes decision boundary. If the Bayes decision boundary is linear, we expect QDA to perform better on the training set because its higher flexiblity may yield a closer fit.  
+
+b. We expect QDA to perform better both on the training and test sets, if the Bayes decision boundary is non-linear.
+
+c. Usually when the sample size n increases, we think QDA (which is more flexible than LDA and so has higher variance) is recommended if the training set is very large, therefore the variance of the classifier is not a major issue.
+
+d. False. When there are fewer sample points, the variance from using a more flexible method such as QDA, will lead to overfitting, which could cause an inferior test error rate.
+
+## Question 2 
+
+
+####a. 
+
+```{r}
+require(ISLR)
+require(MASS)
+require(class)
+attach(Weekly)
+summary(Weekly)
+head(Weekly)
+cor(Weekly[,-9])
+plot(Volume~Year)
+pairs(Weekly)
+```
+
+- I find that volume and years are probably two factors that have correlation accordign to the corvariance table and summary, and when you plot, you find the volume factors increases as time goes by which confirm my conclusion from the summary.
+
+####b. 
+
+```{r}
+m1 <- glm(Direction~Lag1+Lag2+Lag3+Lag4+Lag5+Volume, family = binomial)
+summary(m1)
+```
+
+- According to the summary, only the facor Lag2 seems to be siginificant with p-value smaller than the siginificance level as 0.0296.
+
+
+#### c. 
+```{r}
+m1predict <- predict(m1)
+m1predict2 = exp(m1predict) / (1+exp(m1predict))
+guess <- as.numeric(m1predict2 >= 0.5)
+
+correct <- table(guess, Direction)
+correct
+rate <- (correct[1,1]+correct[2,2])/sum(correct)
+rate
+
+
+
+```
+
+- The correct cases predicted by the logistic model is around 0.5610652. The logestic regression uses the training data, because usually it is better and more optimistic than simply using the testing data, because usually we are more interested in the future trend and movement from the model perfrom on the training data instead of using testing data to fit the model. We care more about the prediction and uknowness. 
+
+#### d. 
+
+```{r}
+training.data <- Year < 2009 
+testing.data <- Weekly[!training.data, ]
+m2 <- glm(Direction~Lag2, family=binomial, data=Weekly, subset=training.data)
+glm.predict2 <- predict(m2, newdata = testing.data)
+pred2 = exp(glm.predict2) / (1+exp(glm.predict2))
+testpreds <- as.numeric(pred2 >= 0.5)
+correct2 <- table(testpreds, Direction[!training.data])
+correct2
+rate2 <- (correct2[1,1]+correct2[2,2])/sum(correct2)
+rate2
+
+
+```
+
+
+- The correction rate of the testing data here is 0.625.
+
+#### e. 
+```{r}
+ldafit = lda(Direction~Lag2, subset = training.data)
+lda.pred = predict(ldafit, newdata=testing.data, type="response")
+correct3 <- table(lda.pred$class, testing.data$Direction)
+correct3
+rate3 <- (correct3[1,1]+correct3[2,2])/sum(correct3)
+rate3
+```
+
+- The correct rate for the testing data using LDA is 0.625 which is same as (d).
+
+#### f. 
+```{r}
+
+qda.fit = qda(Direction~Lag2, subset = training.data)
+qda.pred = predict(qda.fit, newdata=testing.data, type="response")
+qda.class = qda.pred$class
+correct4 <- table(qda.class, testing.data$Direction)
+correct4
+rate4 <- (correct4[1,1]+correct4[2,2])/sum(correct4)
+rate4 
+
+```
+
+- This time the correction rate prediction goes down to 0.587 for the testnig test, which is lower than the rate from LDA and the logistic regression.
+
+
+#### g. 
+```{r}
+train.X <- as.data.frame(Lag2[training.data])
+test.X <- as.data.frame(Lag2[!training.data])
+set.seed(1)
+knn.pred = knn(train.X, test.X, Direction[training.data], k=1)
+correct5 <- table(knn.pred, testing.data$Direction)
+correct5
+rate5 <- (correct5[1,1]+correct5[2,2])/sum(correct5)
+rate5
+```
+
+- The overall correction rate with K=1 is 0.5.
+
+#### i. 
+
+```{r}
+m3 <- glm(Direction~Lag2+Volume, family=binomial, data=Weekly, subset=training.data)
+glm.predict3 <- predict(m3, newdata = testing.data)
+pred3 = exp(glm.predict3) / (1+exp(glm.predict3))
+testpreds <- as.numeric(pred2 >= 0.5)
+a <- table(testpreds, Direction[!training.data])
+a 
+aa <- (a[1,1]+a[2,2])/sum(a)
+aa
+
+lda.2 <- lda(Direction~Lag2+Lag1+Lag2+Lag3+Lag4+Lag5+Volume, subset=training.data)
+lda.predict2 <- predict(lda.2, testing.data)
+b <- table(lda.predict2$class, Direction[!training.data])
+b
+bb <- (b[1,1]+b[2,2])/sum(b)
+bb
+
+lda.3 <- lda(Direction~Lag2+Volume, subset=training.data)
+lda.predict3 <- predict(lda.3, testing.data)
+c <- table(lda.predict3$class, Direction[!training.data])
+c 
+cc <- (c[1,1]+c[2,2])/sum(c)
+cc
+
+qda.2 <- qda(Direction~Lag2+Lag1+Lag2+Lag3+Lag4+Lag5+Volume, subset=training.data)
+qda.predict2 <- predict(qda.2, testing.data)
+d <- table(qda.predict2$class, Direction[!training.data])
+d
+dd <- (d[1,1]+d[2,2])/sum(d)
+dd
+
+qda.3 <- qda(Direction~Lag2+Volume, subset=training.data)
+qda.predict3 <- predict(qda.3, testing.data)
+e <- table(qda.predict3$class, Direction[!training.data])
+e 
+ee <- (e[1,1]+e[2,2])/sum(e)
+ee
+
+knn_result <- 0
+for(i in 1:10) {
+  result_i <- knn(train.X, test.X, Direction[training.data], k=i)
+  knn_result[i] <- mean(result_i != Direction[!training.data])
+}
+knn_result
+```
+
+- After comparing LDA,QDA, and linear regression, I find the original Lag2, K=1 is the best predictor to yield best result.
+
+## Question 3
+
+#### a. 
+```{r}
+attach(Auto)
+mpg01 <- rep(0,length(mpg))
+mpg01[mpg > median(mpg)] <- 1
+Auto <- data.frame(Auto, mpg01)
+head(Auto)
+```
+
+#### b. 
+```{r}
+pairs(mpg01~acceleration+weight+horsepower+displacement)
+par(mfrow=c(2,3))
+for(i in names(Auto)){
+  # excluding the own mpgs variables and others categorical variables
+  if( grepl(i, pattern="^mpg|cylinders|origin|name")){ next}
+  boxplot(eval(parse(text=i)) ~ mpg01, ylab=i, col=c("green", "blue"))
+}
+
+
+```
+
+- I feel that 4 factors which are accelerate, weight, displacement, horsepower have some association with mpg01. 
+
+#### c. 
+```{r}
+set.seed(76776889)
+rows <- sample(x=nrow(Auto), size=.70*nrow(Auto))
+trainset <- Auto[rows, ]
+testset <- Auto[-rows, ]
+
+```
+
+- Split the data into 70% and 30%. 
+
+#### d. 
+```{r}
+auto.lda <- lda(mpg01~horsepower+weight+displacement+acceleration)
+auto.lda.predict <- predict(auto.lda, testset)
+table(auto.lda.predict$class, mpg01[-rows])
+(2+13)/(48+2+13+55)
+
+```
+
+- The testing error rate is 0.1271186 for lda.
+
+#### e. 
+```{r}
+auto.qda <- qda(mpg01~horsepower+weight+displacement+acceleration)
+auto.qda.predict <- predict(auto.qda, testset)
+table(auto.qda.predict$class, mpg01[-rows])
+(3+10)/(51+3+10+54)
+```
+- The testing error rate is 0.1101695 for qda.
+
+
+
+
+#### f. 
+```{r}
+
+auto.glm <- glm(mpg01~horsepower+weight+acceleration+displacement, family=binomial)
+auto.glm.predict <- predict(auto.glm, newdata = testset)
+p = exp(auto.glm.predict) / (1+exp(auto.glm.predict))
+guess <- as.numeric(p >= 0.5)
+table(guess, mpg01[-rows])
+(6+9)/(51+6+9+51)
+```
+
+- The testinmg error obtained through logistic regression is 0.1282051
+
+#### g. 
+
+```{r}
+sel.variables <- which(names(trainset)%in%c("mpg01", "displacement", "horsepower", "weight", "acceleration"))
+
+set.seed(76776889)
+accuracies <- data.frame("k"=1:10, acc=NA)
+for(k in 1:10){
+  knn.pred <- knn(train=trainset[, sel.variables], test=testset[, sel.variables], cl=trainset$mpg01, k=k)
+  
+  # test-error
+  accuracies$acc[k]= round(sum(knn.pred!=testset$mpg01)/nrow(testset)*100,2)
+}
+
+accuracies
+
+```
+
+- We can see that when K=9 has the lowest error rate, which is best choice. 
+
+## Question 4
+```{r}
+set.seed(76776889)
+rowb <- sample(1:nrow(Boston),nrow(Boston)*0.7, replace = F)
+
+train <- Boston[rowb, -1]
+test <- Boston[-rowb, -1]
+crime.rate <- rep(0, 506) 
+crime.rate[Boston[[1]] > median(Boston[[1]])] = 1
+Y.train <- crime.rate[rowb]
+Y.test <- crime.rate[-rowb]
+
+```
+
+```{r}
+attach(Boston)
+summary(glm(crime.rate~zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat+medv, family=binomial()))
+
+```
+
+##Logestic Regression 
+#### three variables: nox, rad, dis
+```{r}
+lgglm3 <- glm(crime.rate~nox+rad+dis, family=binomial)
+crglm.predict3 <- predict(lgglm3, newdata = test)
+cr.glm.pred3 <- as.numeric(exp(crglm.predict3) / (1+exp(crglm.predict3)) >= 0.5)
+table(cr.glm.pred3, Y.test)
+(68+61)/(68+14+9+61)
+```
+#### four variables: nox, rad, dis, ptratio
+```{r}
+lgglm4 <- glm(crime.rate~nox+rad+dis+ptratio, family=binomial)
+crglm.predict4 <- predict(lgglm4, newdata = test)
+cr.glm.pred4 <- as.numeric(exp(crglm.predict4) / (1+exp(crglm.predict4)) >= 0.5)
+table(cr.glm.pred4, Y.test)
+(71+61)/(71+61+14+6)
+```
+#### five variables: nox, rad, dis, ptratio, medv
+```{r}
+lgglm5 <- glm(crime.rate~nox+rad+dis+ptratio+medv, family=binomial)
+crglm.predict5 <- predict(lgglm5, newdata = test)
+cr.glm.pred5 <- as.numeric(exp(crglm.predict5) / (1+exp(crglm.predict5)) >= 0.5)
+table(cr.glm.pred5, Y.test)
+(71+61)/(71+61+14+6)
+```
+
+- Logestic regression with 5 predictors yields best result. 
+
+##LDA 
+```{r}
+lda(crime.rate~zn+indus+chas+nox+rm+age+dis+rad+tax+ptratio+black+lstat+medv)
+```
+
+#### three predictors: nox, rm, ptratio
+```{r}
+crlda3 <- lda(crime.rate~nox+rm+ptratio)
+crlda.predict3 <- predict(crlda3, test)
+table(crlda.predict3$class, Y.test)
+(68+63)/152
+
+```
+#### four predictors: nox, rm, ptratio,dis
+```{r}
+crlda4 <- lda(crime.rate~nox+rm+ptratio+dis)
+crlda.predict4 <- predict(crlda4, test)
+table(crlda.predict4$class, Y.test)
+(65+65)/152
+```
+
+#### five predictors: nox, rm, ptratio, dis, medv
+
+```{r}
+crlda5 <- lda(crime.rate~nox+rm+ptratio+dis+medv)
+crlda.predict5 <- predict(crlda5, test)
+table(crlda.predict5$class, Y.test)
+(61+65)/152
+```
+ - For, LDA, when it is 3 predictors yields the best result.
+ 
+##QDA
+#### three predictors: nox, rm, ptratio
+```{r}
+
+crqda3 <- qda(crime.rate~nox+rm+ptratio)
+crqda.predict3 <- predict(crqda3, test)
+table(crqda.predict3$class, Y.test)
+
+(67+58)/152
+```
+#### four predictors: nox, rm, ptratio,dis
+```{r}
+crqda4 <- qda(crime.rate~nox+rm+ptratio+dis)
+crqda.predict4 <- predict(crqda4, test)
+table(crqda.predict4$class, Y.test)
+(64+60)/152
+```
+#### five predictors: nox, rm, ptratio, dis, medv
+
+```{r}
+
+crqda5 <- qda(crime.rate~nox+rm+ptratio+dis+medv)
+crqda.predict5 <- predict(crqda5, test)
+table(crqda.predict5$class, Y.test)
+(67+59)/152
+```
+- For QDA, it yields best resuld at 5 predictors. 
+
+## KNN
+```{r}
+set.seed(1)
+cr.knn.result1 <- rep(NA, 20)
+cr.train3 <- train[, c("dis", "age", "medv")]
+cr.test3 <- test[, c("dis", "age", "medv")]
+for(i in 1:20) {
+  result_i <- knn(cr.train3, cr.test3, Y.train, k=i)
+  cr.knn.result1[i] <- mean(result_i == Y.test)
+}
+max(cr.knn.result1)
+set.seed(1)
+cr.knn.result2 <- rep(NA, 20)
+cr.train4 <- train[, c("dis", "age", "medv", "nox")]
+cr.test4 <- test[, c("dis", "age", "medv", "nox")]
+for(i in 1:20) {
+  result_i <- knn(cr.train4, cr.test4, Y.train, k=i)
+  cr.knn.result2[i] <- mean(result_i == Y.test)
+}
+max(cr.knn.result2)
+set.seed(1)
+cr.knn.result3 <- rep(NA, 20)
+cr.train5 <- train[, c("dis", "age", "medv", "nox", "indus")]
+cr.test5 <- test[, c("dis", "age", "medv", "nox", "indus")]
+for(i in 1:20) {
+  result_i <- knn(cr.train5, cr.test5, Y.train, k=i)
+  cr.knn.result3[i] <- mean(result_i == Y.test)
+}
+max(cr.knn.result3)
+
+
+```
+
+- The above are for 3, 4, 5 predictors and we could tell when it is 5 predictors, the result is best at correction rate 0.8618421
+
+- So, the KNN with 5 predictors is best and we chose logestic regression method with 5 predictors which is best.
+
